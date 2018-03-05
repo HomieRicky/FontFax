@@ -38,11 +38,15 @@ public class FontType implements Serializable {
         return false;
     }
 
-    public Mat getLetterImg(char c) {
+    public Mat getLetterImg(String c) {
         for(Letter l : alphabet) {
             if(l.letter.equals(c)) return l.letterImg;
         }
         return null;
+    }
+
+    public Mat getLetterImg(int i) {
+        return alphabet.get(i).letterImg;
     }
 
     public int[] mapIndicesToString(String in) {
@@ -51,10 +55,11 @@ public class FontType implements Serializable {
         ArrayList<Integer> sizes = new ArrayList<>();
         for(Letter l : alphabet) if(l.letter.length() > size) size = l.letter.length();
         while(size > 0) {
-            for(int i = 0; i < alphabet.size(); i++) if(alphabet.get(i).letter.length() == i) {
-                indicesByLength.add(i);
-                sizes.add(alphabet.get(i).letter.length());
-            }
+            for(int i = 0; i < alphabet.size(); i++)
+                if(alphabet.get(i).letter.length() == size) {
+                    indicesByLength.add(i);
+                    sizes.add(alphabet.get(i).letter.length());
+                }
             size--;
         }
         int ibl[] = indicesByLength.stream().mapToInt(i->i).toArray();
@@ -70,9 +75,14 @@ public class FontType implements Serializable {
                     }
                 }
             }
+            i++;
         }
 
         return indices.stream().mapToInt(i->i).toArray();
+    }
+
+    public int getAlphabetSize() {
+        return alphabet.size();
     }
 
 }

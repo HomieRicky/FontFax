@@ -58,6 +58,14 @@ public class FontMaker extends JFrame implements ClipboardOwner {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
+
+                if(loadedFont == null) {
+                    JOptionPane.showMessageDialog(null, "No font loaded! Use the Font Manager to load or create one.", "Alert", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                text = generateTextImg(editorArea.getText());
+
                 JLabel lbl = new JLabel(new ImageIcon(matToBufferedImage(text)));
                 JFrame j = new JFrame();
                 j.add(lbl);
@@ -169,6 +177,24 @@ public class FontMaker extends JFrame implements ClipboardOwner {
 
             return false;
         }
+    }
+
+    public Mat generateTextImg(String s) {
+        int indices[] = loadedFont.mapIndicesToString(s);
+        int totalWidth = 0;
+        int maxHeight = 0;
+        for(int i : indices) {
+            totalWidth += loadedFont.getLetterImg(i).cols();
+            maxHeight = loadedFont.getLetterImg(i).rows() > maxHeight ? loadedFont.getLetterImg(i).rows() : maxHeight;
+        }
+        Mat retMat = new Mat(maxHeight, totalWidth, loadedFont.getLetterImg(indices[0]).type(), Scalar.all(0));
+        int widthIndex = 0;
+        for(int i : indices) {
+            Mat curMat = loadedFont.getLetterImg(i);
+            curMat.copyTo(retMat.submat(0, curMat.rows(), widthIndex, widthIndex+curMat.cols()));
+            widthIndex += curMat.cols();
+        }
+        return retMat;
     }
 
 

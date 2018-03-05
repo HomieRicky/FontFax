@@ -12,10 +12,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
+import java.io.*;
 
 public class FontManager extends JFrame {
 
-    JTextField letterField;
     JTextField angleField;
     JTextField sizeField;
     JTextField xToYField;
@@ -26,7 +26,7 @@ public class FontManager extends JFrame {
     JButton saveFontBtn;
     JButton saveLetterBtn;
     JButton newFontBtn;
-    JButton eyedropperBtn;
+    //JButton eyedropperBtn; //TODO: make something like this later
 
     JLabel lbl;
 
@@ -41,9 +41,7 @@ public class FontManager extends JFrame {
     static Mat displayImage = new Mat(image.rows(), image.cols(), image.type(), Scalar.all(0));
     static Point boxPos = new Point(100, 100);
     static int tolerance = 5;
-    static Scalar filterColour = new Scalar(0, 0, 0);
-
-    String usedString = "";
+    //static Scalar filterColour = new Scalar(0, 0, 0); //TODO: Use with eyedropper
 
     FontType fontType;
 
@@ -60,52 +58,47 @@ public class FontManager extends JFrame {
         g.fill = GridBagConstraints.HORIZONTAL;
         g.gridx = 0;
         g.gridy = 0;
-        letterField = new JTextField("letter");
-        letterField.setEditable(true);
-        mainPanel.add(letterField, g);
-        g.gridx = 0;
-        g.gridy = 1;
         angleField = new JTextField("angle");
         angleField.setEditable(true);
         mainPanel.add(angleField, g);
         g.gridx = 0;
-        g.gridy = 2;
+        g.gridy = 1;
         sizeField = new JTextField("size");
         sizeField.setEditable(true);
         mainPanel.add(sizeField, g);
         g.gridx = 0;
-        g.gridy = 3;
+        g.gridy = 2;
         xToYField = new JTextField("x to y ratio");
         xToYField.setEditable(true);
         mainPanel.add(xToYField, g);
         g.gridx = 0;
-        g.gridy = 4;
+        g.gridy = 3;
         toleranceField = new JTextField("tolerance");
         toleranceField.setEditable(true);
         mainPanel.add(toleranceField, g);
         g.gridx = 0;
-        g.gridy = 5;
+        g.gridy = 4;
         loadImageBtn = new JButton("Load Image");
         mainPanel.add(loadImageBtn, g);
         g.gridx = 0;
-        g.gridy = 6;
+        g.gridy = 5;
         loadFontBtn = new JButton("Load Font");
         mainPanel.add(loadFontBtn, g);
         g.gridx = 0;
-        g.gridy = 7;
+        g.gridy = 6;
         saveFontBtn = new JButton("Save Font");
         mainPanel.add(saveFontBtn, g);
         g.gridx = 0;
-        g.gridy = 8;
+        g.gridy = 7;
         saveLetterBtn = new JButton("Save Letter");
         mainPanel.add(saveLetterBtn, g);
         g.gridx = 0;
-        g.gridy = 9;
+        g.gridy = 8;
         newFontBtn = new JButton("New Font");
         mainPanel.add(newFontBtn, g);
         g.gridx = 1;
         g.gridy = 0;
-        g.gridheight = 10;
+        g.gridheight = 9;
         g.weightx = 1.0;
         g.fill = GridBagConstraints.VERTICAL;
         //g.anchor = GridBagConstraints.PAGE_END;
@@ -184,7 +177,81 @@ public class FontManager extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                getFilteredLetter();
+                if(fontType == null) {
+                    JOptionPane.showMessageDialog(mainPanel, "You must load a font first or create a new one.", "Alert", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    getFilteredLetter();
+                }
+            }
+        });
+
+        newFontBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                if(fontType == null) {
+                    fontType = new FontType();
+                    FontMaker.setFont(fontType);
+                } else {
+                    int reply = JOptionPane.showConfirmDialog(mainPanel, "Start new font with one already loaded?", "Alert", JOptionPane.YES_NO_OPTION);
+                    if(reply == JOptionPane.YES_OPTION) {
+                        fontType = new FontType();
+                        FontMaker.setFont(fontType);
+                    }
+                }
+            }
+        });
+
+        loadFontBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                if(fontType != null) {
+                    int reply = JOptionPane.showConfirmDialog(mainPanel, "Load another font with one already loaded?", "Alert", JOptionPane.YES_NO_OPTION);
+                    if(reply == JOptionPane.NO_OPTION) return;
+                }
+                JFileChooser jfc = new JFileChooser();
+                FileNameExtensionFilter f = new FileNameExtensionFilter("FontMaker Files", "fm");
+                jfc.setFileFilter(f);
+                int retriever = jfc.showOpenDialog(null);
+                if(retriever == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        FileInputStream fin = new FileInputStream(jfc.getSelectedFile());
+                        ObjectInputStream in = new ObjectInputStream(fin);
+                        fontType = (FontType) in.readObject();
+                        FontMaker.setFont(fontType);
+                        JOptionPane.showMessageDialog(null, "Loaded " + fontType.getAlphabetSize() + " letters!");
+                    } catch (IOException e1) {
+                        JOptionPane.showMessageDialog(null, "Unable to open!", "Alert", JOptionPane.WARNING_MESSAGE);
+                        e1.printStackTrace();
+
+                    } catch (ClassNotFoundException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        saveFontBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                JFileChooser jfc = new JFileChooser();
+                FileNameExtensionFilter f = new FileNameExtensionFilter("FontMaker Files", "fm");
+                jfc.setFileFilter(f);
+                int retriever = jfc.showSaveDialog(null);
+                if(retriever == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        FileOutputStream fout = new FileOutputStream(jfc.getSelectedFile()+".fm");
+                        ObjectOutputStream o = new ObjectOutputStream(fout);
+                        o.writeObject(fontType);
+                        o.close();
+                    } catch (IOException e1) {
+                        JOptionPane.showMessageDialog(null, "Unable to save!", "Alert", JOptionPane.WARNING_MESSAGE);
+                        e1.printStackTrace();
+
+                    }
+                }
             }
         });
 
@@ -226,8 +293,6 @@ public class FontManager extends JFrame {
         add(mainPanel);
         pack();
         setVisible(true);
-
-
     }
 
 
@@ -262,7 +327,7 @@ public class FontManager extends JFrame {
         return true;
     }
 
-    public static Mat getFilteredLetter() {
+    public Mat getFilteredLetter() {
         Mat m = new Mat();
         Imgproc.cvtColor(paddedImg, m, Imgproc.COLOR_BGRA2BGR);
         //System.out.println(m.toString());
@@ -309,7 +374,7 @@ public class FontManager extends JFrame {
         }
         maskMat.put(0, 0, data);
         Mat roiMat = maskMat.submat(roi);
-        new QuickDisplay(roiMat);
+        new QuickDisplay(roiMat, fontType);
         return new Mat();
     }
 }

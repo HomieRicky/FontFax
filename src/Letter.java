@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 public class Letter implements Serializable{
 
-    public Mat letterImg;
+    public transient Mat letterImg;
     public String letter;
     public boolean set;
 
